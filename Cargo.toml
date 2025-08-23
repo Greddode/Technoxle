@@ -1,3 +1,4 @@
+cargo-features = ["codegen-backend"]
 [package]
 name = "Technovle"
 version = "0.1.0"
@@ -6,8 +7,69 @@ edition = "2024"
 [dependencies]
 avian3d = "0.3.1"
 bevy = "0.16.1"
+tracing = { version = "0.1", features = [
+    "max_level_debug",
+    "release_max_level_warn",
+] }
 
+[unstable]
+codegen-backend = true
 
+[profile.dev]
+codegen-backend = "cranelift"
+# If you want to attach a debugger, set this to true
+debug = "line-tables-only"
+
+opt-level = 1
+
+# Consider compiling deps with cranelift if you want cold-compilation to be faster
 [profile.dev.package."*"]
+codegen-backend = "llvm"
 opt-level = 3
+
+# cranelift is `panic = abort`, so you need to compile with llvm to get `#[should_panic]` working
+[profile.test.package."*"]
+codegen-backend = "llvm"
+
+# Disable cranelift for release profile
+[profile.release]
+codegen-backend = "llvm"
+
+[build]
+# Using a global target dir allows all projects to share incremental compilation results,
+# vastly speeding up cold-compilation of new projects.
+target-dir = "/home/hhh/.cargo/global-target"
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = [
+    "-Clink-arg=-fuse-ld=mold",
+
+    # Nightly
+    "-Zshare-generics=y",
+    "-Zthreads=8",
+]
+rustdocflags = [
+    "-Clink-arg=-fuse-ld=mold",
+    # Nightly
+    "-Zshare-generics=y",
+    "-Zthreads=8",
+]
+
+[target.wasm32-unknown-unknown]
+# We cannot really change the linker for wasm32-unknown-unknown
+rustflags = [
+    "--cfg",
+    "getrandom_backend=\"wasm_js\"",
+    # Nightly
+    "-Zshare-generics=y",
+    "-Zthreads=8",
+]
+rustdocflags = [
+    "--cfg",
+    "getrandom_backend=\"wasm_js\"",
+    # Nightly
+    "-Zshare-generics=y",
+    "-Zthreads=8",
+]
 
