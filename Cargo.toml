@@ -1,4 +1,3 @@
-cargo-features = ["codegen-backend"]
 [package]
 name = "Technovle"
 version = "0.1.0"
